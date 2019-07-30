@@ -50,6 +50,24 @@ export class NewOfferPage implements OnInit {
     this.form.patchValue({ location: location });
   }
 
+  onImagePicked(imageData: string | File) {
+    let imageFile;
+    if (typeof imageData === 'string') {
+      try {
+        imageFile = base64toBlob(
+            imageData.replace('data:image/jpeg;base64,', ''),
+            'image/jpeg'
+        );
+      } catch (error) {
+        console.log(error);
+        return;
+      }
+    } else {
+      imageFile = imageData;
+    }
+    this.form.patchValue({ image: imageFile });
+  }
+
   onCreateOffer() {
     if (!this.form.valid) {
       return;
