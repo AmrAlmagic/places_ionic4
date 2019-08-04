@@ -1,11 +1,11 @@
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, of } from 'rxjs';
-import { take, map, tap, delay, switchMap } from 'rxjs/operators';
+import {Injectable} from '@angular/core';
+import {HttpClient} from '@angular/common/http';
+import {BehaviorSubject, of} from 'rxjs';
+import {take, map, tap, delay, switchMap} from 'rxjs/operators';
 
-import { Place } from './place.model';
-import { AuthService } from '../auth/auth.service';
-import { PlaceLocation } from './location.model';
+import {Place} from './place.model';
+import {AuthService} from '../auth/auth.service';
+import {PlaceLocation} from './location.model';
 
 // [
 //   new Place(
@@ -61,7 +61,8 @@ export class PlacesService {
         return this._places.asObservable();
     }
 
-    constructor(private authService: AuthService, private http: HttpClient) {}
+    constructor(private authService: AuthService, private http: HttpClient) {
+    }
 
     fetchPlaces() {
         return this.http
@@ -119,20 +120,31 @@ export class PlacesService {
             );
     }
 
+    uploadImage(image: File) {
+        const uploadData = new FormData();
+        uploadData.append('image', image);
+
+        return this.http.post<{ imageUrl: string, imagePath: string }>(
+            'https://us-central1-ionic5-angular-course.cloudfunctions.net/storeImage',
+            uploadData
+        );
+    }
+
     addPlace(
         title: string,
         description: string,
         price: number,
         dateFrom: Date,
         dateTo: Date,
-        location: PlaceLocation
+        location: PlaceLocation,
+        imageUrl: string
     ) {
         let generatedId: string;
         const newPlace = new Place(
             Math.random().toString(),
             title,
             description,
-            'https://lonelyplanetimages.imgix.net/mastheads/GettyImages-538096543_medium.jpg?sharp=10&vib=20&w=1200',
+            imageUrl,
             price,
             dateFrom,
             dateTo,
@@ -195,7 +207,7 @@ export class PlacesService {
                 );
                 return this.http.put(
                     `https://ionic5-angular-course.firebaseio.com/offered-places/${placeId}.json`,
-                    { ...updatedPlaces[updatedPlaceIndex], id: null }
+                    {...updatedPlaces[updatedPlaceIndex], id: null}
                 );
             }),
             tap(() => {
