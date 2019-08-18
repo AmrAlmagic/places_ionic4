@@ -1,5 +1,5 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import {Component, OnInit, OnDestroy} from '@angular/core';
+import {ActivatedRoute, Router} from '@angular/router';
 import {
     NavController,
     ModalController,
@@ -7,14 +7,15 @@ import {
     LoadingController,
     AlertController
 } from '@ionic/angular';
-import { Subscription } from 'rxjs';
+import {Subscription} from 'rxjs';
+import {switchMap, take} from 'rxjs/operators';
 
-import { PlacesService } from '../../places.service';
-import { Place } from '../../place.model';
-import { CreateBookingComponent } from '../../../bookings/create-booking/create-booking.component';
-import { BookingService } from '../../../bookings/booking.service';
-import { AuthService } from '../../../auth/auth.service';
-import { MapModalComponent } from '../../../shared/map-modal/map-modal.component';
+import {PlacesService} from '../../places.service';
+import {Place} from '../../place.model';
+import {CreateBookingComponent} from '../../../bookings/create-booking/create-booking.component';
+import {BookingService} from '../../../bookings/booking.service';
+import {AuthService} from '../../../auth/auth.service';
+import {MapModalComponent} from '../../../shared/map-modal/map-modal.component';
 
 @Component({
     selector: 'app-place-detail',
@@ -38,7 +39,8 @@ export class PlaceDetailPage implements OnInit, OnDestroy {
         private authService: AuthService,
         private alertCtrl: AlertController,
         private router: Router
-    ) {}
+    ) {
+    }
 
     ngOnInit() {
         this.route.paramMap.subscribe(paramMap => {
@@ -47,12 +49,22 @@ export class PlaceDetailPage implements OnInit, OnDestroy {
                 return;
             }
             this.isLoading = true;
-            this.placeSub = this.placesService
-                .getPlace(paramMap.get('placeId'))
+            let fetchedUserId: string;
+            this.authService.userId
+                .pipe(
+                    take(1),
+                    switchMap(userId => {
+                        if (!userId) {
+                            throw new Error('Found no user!');
+                        }
+                        fetchedUserId = userId;
+                        return this.placesService.getPlace(paramMap.get('placeId'));
+                    })
+                )
                 .subscribe(
                     place => {
                         this.place = place;
-                        this.isBookable = place.userId !== this.authService.userId;
+                        this.isBookable = place.userId !== fetchedUserId;
                         this.isLoading = false;
                     },
                     error => {
@@ -111,7 +123,7 @@ export class PlaceDetailPage implements OnInit, OnDestroy {
         this.modalCtrl
             .create({
                 component: CreateBookingComponent,
-                componentProps: { selectedPlace: this.place, selectedMode: mode }
+                componentProps: {selectedPlace: this.place, selectedMode: mode}
             })
             .then(modalEl => {
                 modalEl.present();
@@ -120,7 +132,7 @@ export class PlaceDetailPage implements OnInit, OnDestroy {
             .then(resultData => {
                 if (resultData.role === 'confirm') {
                     this.loadingCtrl
-                        .create({ message: 'Booking place...' })
+                        .create({message: 'Booking place...'})
                         .then(loadingEl => {
                             loadingEl.present();
                             const data = resultData.data.bookingData;
